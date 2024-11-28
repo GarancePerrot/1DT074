@@ -264,8 +264,7 @@ def SetupTcpConnection(srcNode, dstNode, dstAddr, startTime, stopTime):
   client_apps.Start(startTime)
   client_apps.Stop(stopTime)
   
-  # Attach cwnd tracing
-  connect_cwnd_tracing(srcNode)
+ 
   
   
 #added: set up UDP communication with node 1 as the packet generator and node 3 as the sink:
