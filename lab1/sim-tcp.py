@@ -64,21 +64,10 @@ import ns.flow_monitor
 #ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
 #ns.core.LogComponentEnable("TcpWestwood", ns.core.LOG_LEVEL_LOGIC)
 #ns.core.LogComponentEnable("TcpTahoe", ns.core.LOG_LEVEL_LOGIC)
-# ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
+ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
 
 
-# #added : 
-
-# # Callback function for logging cwnd updates
-# def cwnd_trace_callback(old_cwnd, new_cwnd):
-#     print(f"cwnd updated: {old_cwnd} -> {new_cwnd}")
-
-# # Connect the callback to TcpNewReno
-# def connect_cwnd_tracing(tcp_socket):
-#     tcp_newreno = tcp_socket.GetObject(ns.internet.TcpNewReno)
-#     if tcp_newreno is not None:
-#         tcp_newreno.TraceConnectWithoutContext("CongestionWindow", ns.core.MakeCallback(cwnd_trace_callback))
-
+# in progress : how to get updates to the congestion window size (cwnd)  ??
 
 
 
@@ -274,6 +263,9 @@ def SetupTcpConnection(srcNode, dstNode, dstAddr, startTime, stopTime):
   client_apps = on_off_tcp_helper.Install(srcNode)
   client_apps.Start(startTime)
   client_apps.Stop(stopTime)
+  
+  # Attach cwnd tracing
+  connect_cwnd_tracing(srcNode)
   
   
 #added: set up UDP communication with node 1 as the packet generator and node 3 as the sink:
