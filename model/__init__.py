@@ -1,1 +1,1 @@
-from .model import start
+from .model import Model
