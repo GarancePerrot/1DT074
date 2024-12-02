@@ -171,16 +171,16 @@ ns.core.Config.SetDefault("ns3::TcpSocket::SegmentSize", ns.core.UintegerValue(1
 # connections created in the simulator. If you want to simulate different TCP versions
 # at the same time, see below for how to do that.
 ns.core.Config.SetDefault("ns3::TcpL4Protocol::SocketType",
-                          ns.core.StringValue("ns3::TcpNewReno"))
+                       #   ns.core.StringValue("ns3::TcpNewReno"))
                         #  ns.core.StringValue("ns3::TcpTahoe"))
                         #  ns.core.StringValue("ns3::TcpReno"))
-                        #  ns.core.StringValue("ns3::TcpLinuxReno"))
+                          ns.core.StringValue("ns3::TcpLinuxReno"))
                         #  ns.core.StringValue("ns3::TcpWestwood"))
 
 # Some examples of attributes for some of the TCP versions.
 #ns.core.Config.SetDefault("ns3::TcpLinuxReno::ReTxThreshold", ns.core.UintegerValue(4))
-ns.core.Config.SetDefault("ns3::TcpWestwood::ProtocolType",
-                          ns.core.StringValue("WestwoodPlus"))
+#ns.core.Config.SetDefault("ns3::TcpWestwood::ProtocolType",
+ #                         ns.core.StringValue("WestwoodPlus"))
 
 
 
