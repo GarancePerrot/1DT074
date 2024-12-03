@@ -14,9 +14,12 @@ def main():
     mymodel.add_application(0, 1, "n1n6", 5, 60, "TCP", 8081)
     # mymodel.add_application(3, 2, "n2n6", 30, 60, "UDP")
     mymodel.add_error("n5n6")
+    
+    # pcap files only sink nodes : i.e node 1 (TCP) and node 2 (UDP)
     mymodel.enable_PCAP("n1n6", "n1n6")
-    mymodel.enable_PCAP("n5n7", "n5n7")
-    mymodel.enable_PCAP("n5n6", "n5n6")
+    mymodel.enable_PCAP("n2n6", "n2n6")
+    #mymodel.enable_PCAP("n5n7", "n5n7")
+    #mymodel.enable_PCAP("n5n6", "n5n6")
     mymodel.start()
 
 if __name__ == "__main__":
