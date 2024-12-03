@@ -32,7 +32,8 @@ class Model:
         ):
         self.netparams = netparams
         ns.core.RngSeedManager.SetSeed(42)
-        ns.core.LogComponentEnable(tcp_type, ns.core.LOG_LEVEL_LOGIC)
+        if verbose:
+            ns.core.LogComponentEnable(tcp_type, ns.core.LOG_LEVEL_LOGIC)
         
         #ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
         #ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
