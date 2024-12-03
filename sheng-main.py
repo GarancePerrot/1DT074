@@ -3,7 +3,7 @@ import os
 
 
 def main():
-    mymodel = Model(NetworkParams(error_rate=0.01), tcp_type = "TcpBbr") 
+    mymodel = Model(netparams = NetworkParams(error_rate=0.01), tcp_type = "TcpLinuxReno" ) 
     #tcp_type : TcpLinuxReno, TcpWestwood, TcpCubic, TcpHybla, TcpHighSpeed, TcpVegas, TcpScalable, TcpVeno
     #           TcpBic, TcpIllinois, TcpLedbat, TcpDctcp, TcpBbr
     

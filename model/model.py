@@ -8,7 +8,7 @@ import ns.point_to_point
 import ns.flow_monitor
 
 from dataclasses import dataclass
-from .corrupt_errror import CorruptPacketErrorModel
+#from .corrupt_errror import CorruptPacketErrorModel
 
 @dataclass
 class NetworkParams:
