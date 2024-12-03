@@ -24,11 +24,13 @@ def create_channel(a: int, b: int, nodes):
 
 class Model:
     def __init__(
-            self, netparams = NetworkParams(), tcp_type = "ns3::TcpLinuxReno"
+            self, netparams = NetworkParams(), tcp_type = "TcpLinuxReno"
         ):
         self.netparams = netparams
         ns.core.RngSeedManager.SetSeed(42)
-        ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
+        ns.core.LogComponentEnable(tcp_type, ns.core.LOG_LEVEL_LOGIC)
+        
+        #ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
         #ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
         #ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
         #ns.core.LogComponentEnable("PointToPointNetDevice", ns.core.LOG_LEVEL_ALL)
@@ -36,6 +38,8 @@ class Model:
         #ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
         #ns.core.LogComponentEnable("TcpWestwood", ns.core.LOG_LEVEL_LOGIC)
         #ns.core.LogComponentEnable("TcpTahoe", ns.core.LOG_LEVEL_LOGIC)
+        
+
 
         self.nodes = ns.network.NodeContainer()
         self.nodes.Create(8)
@@ -63,17 +67,16 @@ class Model:
         
         ns.core.Config.SetDefault("ns3::TcpSocket::SegmentSize", ns.core.UintegerValue(1448))
 
-        ns.core.Config.SetDefault("ns3::TcpL4Protocol::SocketType",
-                            ns.core.StringValue(tcp_type))
-        #tcp_type : ns3::TcpNewReno, ns3::TcpTahoe, ns3::TcpReno, ns3::TcpLinuxReno, ns3::TcpWestwood etc.
-        
+        ns.core.Config.SetDefault("ns3::TcpL4Protocol::SocketType", ns.core.StringValue("ns3::" + tcp_type))
+
         # Different TCP version may have different protocol type,
         # may cause error when uses a different socket type.
 
         # Some examples of attributes for some of the TCP versions
-        #ns.core.Config.SetDefault("ns3::TcpLinuxReno::ReTxThreshold", ns.core.UintegerValue(4))
-        #ns.core.Config.SetDefault("ns3::TcpWestwood::ProtocolType",
-        #                         ns.core.StringValue("WestwoodPlus"))
+
+        if (tcp_type == "TcpWestwood"):
+            ns.core.Config.SetDefault("ns3::TcpWestwood::ProtocolType", ns.core.StringValue("WestwoodPlus"))
+        
         
 
         stack = ns.internet.InternetStackHelper()
