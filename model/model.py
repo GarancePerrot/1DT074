@@ -8,12 +8,14 @@ import ns.point_to_point
 import ns.flow_monitor
 
 from dataclasses import dataclass
+from .corrupt_errror import CorruptPacketErrorModel
 
 @dataclass
 class NetworkParams:
-    latency = 1
-    rate = 500000
-    on_off_rate = 300000
+    latency: float      = 1.
+    rate: int           = 500000
+    on_off_rate: int    = 300000
+    error_rate: float   = 0.0
 
 
 def create_channel(a: int, b: int, nodes):
@@ -22,20 +24,22 @@ def create_channel(a: int, b: int, nodes):
     channel.Add(nodes.Get(b))
     return channel
 
+
 class Model:
     def __init__(
-            self, netparams = NetworkParams(), tcp_type = "ns3::TcpLinuxReno"
+            self, netparams = NetworkParams(), tcp_type = "ns3::TcpLinuxReno", verbose: bool = False
         ):
         self.netparams = netparams
         ns.core.RngSeedManager.SetSeed(42)
-        ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
-        #ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
-        #ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
-        #ns.core.LogComponentEnable("PointToPointNetDevice", ns.core.LOG_LEVEL_ALL)
-        #ns.core.LogComponentEnable("DropTailQueue", ns.core.LOG_LEVEL_LOGIC)
-        #ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
-        #ns.core.LogComponentEnable("TcpWestwood", ns.core.LOG_LEVEL_LOGIC)
-        #ns.core.LogComponentEnable("TcpTahoe", ns.core.LOG_LEVEL_LOGIC)
+        if verbose:
+            ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
+            #ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
+            #ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
+            #ns.core.LogComponentEnable("PointToPointNetDevice", ns.core.LOG_LEVEL_ALL)
+            #ns.core.LogComponentEnable("DropTailQueue", ns.core.LOG_LEVEL_LOGIC)
+            #ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
+            #ns.core.LogComponentEnable("TcpWestwood", ns.core.LOG_LEVEL_LOGIC)
+            #ns.core.LogComponentEnable("TcpTahoe", ns.core.LOG_LEVEL_LOGIC)
 
         self.nodes = ns.network.NodeContainer()
         self.nodes.Create(8)
@@ -88,24 +92,37 @@ class Model:
 
         ns.internet.Ipv4GlobalRoutingHelper.PopulateRoutingTables()
 
-    def add_application(self, src_node: int, dst_node: int, dst_addr: str, start_time, stop_time, type: str):
+        if netparams.error_rate > 0:
+            self.error_model = ns.network.RateErrorModel()
+            self.error_model.SetAttribute("ErrorRate", ns.core.DoubleValue(self.netparams.error_rate))
+
+
+    def add_error(self, p2p_link: str):
+        if self.netparams.error_rate <= 0:
+            raise ValueError(
+                f"The error rate {self.netparams.error_rate} should be larger than 0 to introduce error.")
+        self.p2p_links[p2p_link].Get(0).SetAttribute("ReceiveErrorModel",
+                                                     ns.core.PointerValue(self.error_model))
+
+
+    def add_application(self, src_node: int, dst_node: int, dst_addr: str, start_time, stop_time, type: str, port: int):
         setup_application = {"TCP": self.SetupTcpConnection,
                             "UDP": self.SetupUdpConnection}
-        setup_application[type](self.nodes.Get(src_node), self.nodes.Get(dst_node), self.ip_address[dst_addr].GetAddress(0), ns.core.Seconds(start_time), ns.core.Seconds(stop_time))
+        setup_application[type](self.nodes.Get(src_node), self.nodes.Get(dst_node), self.ip_address[dst_addr].GetAddress(0), ns.core.Seconds(start_time), ns.core.Seconds(stop_time), port)
 
 
-    def SetupTcpConnection(self, srcNode, dstNode, dstAddr, startTime, stopTime):
+    def SetupTcpConnection(self, srcNode, dstNode, dstAddr, startTime, stopTime, port: int):
         # Create a TCP sink at dstNode
         packet_sink_helper = ns.applications.PacketSinkHelper("ns3::TcpSocketFactory",
                                 ns.network.InetSocketAddress(ns.network.Ipv4Address.GetAny(),
-                                                            8080))
+                                                            port))
         sink_apps = packet_sink_helper.Install(dstNode)
         sink_apps.Start(ns.core.Seconds(1.0))
         sink_apps.Stop(ns.core.Seconds(60.0))
 
         # Create TCP connection from srcNode to dstNode
         on_off_tcp_helper = ns.applications.OnOffHelper("ns3::TcpSocketFactory",
-                                ns.network.Address(ns.network.InetSocketAddress(dstAddr, 8080)))
+                                ns.network.Address(ns.network.InetSocketAddress(dstAddr, port)))
         on_off_tcp_helper.SetAttribute("DataRate",
                             ns.network.DataRateValue(ns.network.DataRate(int(self.netparams.on_off_rate))))
         on_off_tcp_helper.SetAttribute("PacketSize", ns.core.UintegerValue(1500))
@@ -122,7 +139,7 @@ class Model:
         client_apps.Stop(stopTime)
 
 
-    def SetupUdpConnection(self, srcNode, dstNode, dstAddr, startTime, stopTime):
+    def SetupUdpConnection(self, srcNode, dstNode, dstAddr, startTime, stopTime, port: int):
         # Create a UDP sink at dstNode
         echoServer = ns.applications.UdpEchoServerHelper(9)
         serverApps = echoServer.Install(dstNode)
@@ -133,7 +150,7 @@ class Model:
         # Unlike TCP, no need to establish a connection before data transmission
         # Create the client application and connect it to node 1 and port 9. Configure number
         # of packets, packet sizes, inter-arrival interval.
-        echoClient = ns.applications.UdpEchoClientHelper(dstAddr, 9)
+        echoClient = ns.applications.UdpEchoClientHelper(dstAddr, port)
         echoClient.SetAttribute("MaxPackets", ns.core.UintegerValue(1000))
         echoClient.SetAttribute("Interval",
                                 ns.core.TimeValue(ns.core.Seconds(0.01)))
