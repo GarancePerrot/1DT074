@@ -7,9 +7,7 @@ def main():
     #tcp_type : TcpLinuxReno, TcpWestwood, TcpCubic, TcpHybla, TcpHighSpeed, TcpVegas, TcpScalable, TcpVeno
     #           TcpBic, TcpIllinois, TcpLedbat, TcpDctcp, TcpBbr
     
-    # "Logging component not found" for: TcpTahoe, TcpReno, TcpNewReno, TcpYeAH, TcpHTCP, TcpLP, 
-
-    # add_application(src_node: int, dst_node: int, dst_addr: str, start_time, stop_time, type: str)
+    # "Logging component not found" for: TcpTahoe, TcpReno, TcpNewReno, TcpYeAH, TcpHTCP, TcpLP
     
 
     mymodel.add_application(4, 1, "n1n6", 1, 60, "TCP", 8080)
