@@ -8,7 +8,6 @@ import ns.point_to_point
 import ns.flow_monitor
 
 from dataclasses import dataclass
-#from .corrupt_errror import CorruptPacketErrorModel
 
 @dataclass
 class NetworkParams:
@@ -27,25 +26,19 @@ def create_channel(a: int, b: int, nodes):
 
 class Model:
     def __init__(
-
-            self, netparams = NetworkParams(), tcp_type = "TcpLinuxReno", verbose: bool = False
+            self, netparams = NetworkParams(), tcp_type = "ns3::TcpLinuxReno", verbose: bool = False
         ):
         self.netparams = netparams
         ns.core.RngSeedManager.SetSeed(42)
         if verbose:
-            ns.core.LogComponentEnable(tcp_type, ns.core.LOG_LEVEL_LOGIC)
-        
-        #ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
-        #ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
-        #ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
-        #ns.core.LogComponentEnable("PointToPointNetDevice", ns.core.LOG_LEVEL_ALL)
-        #ns.core.LogComponentEnable("DropTailQueue", ns.core.LOG_LEVEL_LOGIC)
-        #ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
-        #ns.core.LogComponentEnable("TcpWestwood", ns.core.LOG_LEVEL_LOGIC)
-        #ns.core.LogComponentEnable("TcpTahoe", ns.core.LOG_LEVEL_LOGIC)
-        
-
-
+            ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
+            #ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
+            #ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
+            #ns.core.LogComponentEnable("PointToPointNetDevice", ns.core.LOG_LEVEL_ALL)
+            #ns.core.LogComponentEnable("DropTailQueue", ns.core.LOG_LEVEL_LOGIC)
+            #ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
+            #ddns.core.LogComponentEnable("TcpWestwood", ns.core.LOG_LEVEL_LOGIC)
+            #ns.core.LogComponentEnable("TcpTahoe", ns.core.iLOG_LEVEL_LOGIC)
 
         self.nodes = ns.network.NodeContainer()
         self.nodes.Create(8)
@@ -73,16 +66,17 @@ class Model:
         
         ns.core.Config.SetDefault("ns3::TcpSocket::SegmentSize", ns.core.UintegerValue(1448))
 
-        ns.core.Config.SetDefault("ns3::TcpL4Protocol::SocketType", ns.core.StringValue("ns3::" + tcp_type))
-
+        ns.core.Config.SetDefault("ns3::TcpL4Protocol::SocketType",
+                            ns.core.StringValue(tcp_type))
+        #tcp_type : ns3::TcpNewReno, ns3::TcpTahoe, ns3::TcpReno, ns3::TcpLinuxReno, ns3::TcpWestwood etc.
+        
         # Different TCP version may have different protocol type,
         # may cause error when uses a different socket type.
 
         # Some examples of attributes for some of the TCP versions
-
-        if (tcp_type == "TcpWestwood"):
-            ns.core.Config.SetDefault("ns3::TcpWestwood::ProtocolType", ns.core.StringValue("WestwoodPlus"))
-        
+        #ns.core.Config.SetDefault("ns3::TcpLinuxReno::ReTxThreshold", ns.core.UintegerValue(4))
+        #ns.core.Config.SetDefault("ns3::TcpWestwood::ProtocolType",
+        #                         ns.core.StringValue("WestwoodPlus"))
         
 
         stack = ns.internet.InternetStackHelper()
@@ -99,15 +93,15 @@ class Model:
 
         if netparams.error_rate > 0:
             self.error_model = ns.network.RateErrorModel()
-            self.error_model.SetAttribute("ErrorRate", ns.core.DoubleValue(self.netparams.error_rate))
+            self.error_model.SetAttribute("ErrorUnit", ns.core.StringValue("ERROR_UNIT_PACKET"))
+            self.error_model.SetAttribute("ErrorRate", ns.core.DoubleValue(netparams.error_rate))
 
 
     def add_error(self, p2p_link: str):
         if self.netparams.error_rate <= 0:
             raise ValueError(
                 f"The error rate {self.netparams.error_rate} should be larger than 0 to introduce error.")
-        self.p2p_links[p2p_link].Get(0).SetAttribute("ReceiveErrorModel",
-                                                     ns.core.PointerValue(self.error_model))
+        self.p2p_links[p2p_link].Get(1).SetReceiveErrorModel(self.error_model)
 
 
     def add_application(self, src_node: int, dst_node: int, dst_addr: str, start_time, stop_time, type: str, port: int):
