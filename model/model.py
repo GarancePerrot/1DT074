@@ -7,7 +7,10 @@ import ns.network
 import ns.point_to_point
 import ns.flow_monitor
 
+
 from dataclasses import dataclass
+from .tcp_version import TCPVersion
+
 
 @dataclass
 class NetworkParams:
@@ -26,12 +29,12 @@ def create_channel(a: int, b: int, nodes):
 
 class Model:
     def __init__(
-            self, netparams = NetworkParams(), tcp_type = "ns3::TcpLinuxReno", verbose: bool = False
+            self, netparams = NetworkParams(), tcp_type: TCPVersion = TCPVersion.LinuxReno, verbose: bool = False
         ):
         self.netparams = netparams
         ns.core.RngSeedManager.SetSeed(42)
         if verbose:
-            ns.core.LogComponentEnable("TcpLinuxReno", ns.core.LOG_LEVEL_LOGIC)
+            ns.core.LogComponentEnable(tcp_type.value, ns.core.LOG_LEVEL_LOGIC)
             #ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
             #ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
             #ns.core.LogComponentEnable("PointToPointNetDevice", ns.core.LOG_LEVEL_ALL)
@@ -65,19 +68,8 @@ class Model:
                     for name, channel in self.channels.items()}
         
         ns.core.Config.SetDefault("ns3::TcpSocket::SegmentSize", ns.core.UintegerValue(1448))
-
         ns.core.Config.SetDefault("ns3::TcpL4Protocol::SocketType",
-                            ns.core.StringValue(tcp_type))
-        #tcp_type : ns3::TcpNewReno, ns3::TcpTahoe, ns3::TcpReno, ns3::TcpLinuxReno, ns3::TcpWestwood etc.
-        
-        # Different TCP version may have different protocol type,
-        # may cause error when uses a different socket type.
-
-        # Some examples of attributes for some of the TCP versions
-        #ns.core.Config.SetDefault("ns3::TcpLinuxReno::ReTxThreshold", ns.core.UintegerValue(4))
-        #ns.core.Config.SetDefault("ns3::TcpWestwood::ProtocolType",
-        #                         ns.core.StringValue("WestwoodPlus"))
-        
+                                  ns.core.StringValue(f"ns3::{tcp_type.value}"))
 
         stack = ns.internet.InternetStackHelper()
         stack.Install(self.nodes)
