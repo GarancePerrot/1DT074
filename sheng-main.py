@@ -51,16 +51,35 @@ def exp3(tcp_type: TCPVersion):
     mymodel.enable_PCAP(f"results/exp1.3-{tcp_type.name}-n5n6", "n5n6")
     mymodel.enable_PCAP(f"results/exp1.3-{tcp_type.name}-n6n7", "n6n7")
     mymodel.start() 
+    
+    
+    
+def exp_retransmissions(tcp_type: TCPVersion):
+    print("=====Retransmission Experiment====")
+    mymodel = Model(NETPARAMS, tcp_version=tcp_type)
+    mymodel.add_application(4, 1, "n1n6", 1, 20, "TCP", 8080)
+    mymodel.add_application(0, 1, "n1n6", 1, 20, "TCP", 8081)
+    mymodel.add_application(3, 2, "n2n6", 10, 20, "UDP", 8082)
+    mymodel.enable_PCAP(f"results/exp_retransmissions-{tcp_type.name}-n1n6", "n1n6")
+    mymodel.enable_PCAP(f"results/exp_retransmissions-{tcp_type.name}-n6n7", "n6n7")
+    mymodel.enable_PCAP(f"results/exp_retransmissions-{tcp_type.name}-n5n6", "n5n6")
+    mymodel.start()
 
 
 def main():
     # for tcp_ver in [TCPVersion.WestWood,]:
     for tcp_ver in [TCPVersion.LinuxReno, TCPVersion.WestWood, TCPVersion.Vegas]:
+    #for tcp_ver in [TCPVersion.LinuxReno, TCPVersion.Cubic, TCPVersion.Bic ]: #family 1
+    #for tcp_ver in [TCPVersion.Westwood, TCPVersion.Highspeed, TCPVersion.Hybla, TCPVersion.Veno, TCPVersion.Illinois,TCPVersion.Ledbat , TCPVersion.Scalable]: #family 2
+    #for tcp_ver in [TCPVersion.Vegas, TCPVersion.Dctcp, TCPVersion.Bbr ]: #family 3
         print(tcp_ver.name)
         exp_control(tcp_ver)
         exp1(tcp_ver)
         exp2(tcp_ver)
         exp3(tcp_ver)
+        #exp_retransmissions(tcp_ver)
+
+    
 
 
 if __name__ == "__main__":

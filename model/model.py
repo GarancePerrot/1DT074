@@ -28,7 +28,7 @@ class Model:
 
         mymodel = Model(NETPARAMS, tcp_version=TCPVersion.LinuxReno)
         mymodel.add_application(4, 1, "n1n6", 1, 20, "TCP", 8080)
-        mymodel.add_error("n1n6)
+        mymodel.add_error("n1n6")
         mymodel.enable_PCAP(f"results/exp1.1-{TCPVersion.LinuxReno.name}-n5n7", "n5n7")
         mymodel.start()
         '''
