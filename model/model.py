@@ -28,6 +28,25 @@ def create_channel(a: int, b: int, nodes):
 
 
 class Model:
+    """
+    > To run the basic function of the model:
+        '''
+        NETPARAMS = NetworkParams(latency_ms=10, error_rate=0.1)
+
+        mymodel = Model(NETPARAMS, tcp_version=TCPVersion.LinuxReno)
+        mymodel.add_application(4, 1, "n1n6", 1, 20, "TCP", 8080)
+        mymodel.add_error("n1n6)
+        mymodel.enable_PCAP(f"results/exp1.1-{TCPVersion.LinuxReno.name}-n5n7", "n5n7")
+        mymodel.start()
+        '''
+    > The topology of the Network is fixed and all nodes are DISABLED by default.
+    > Use the model.add_application function to enable certain nodes. They can be either TCP or
+      UDP class.
+    > The global TCP version is configured using the TCPVersion enum class, see example on top.
+    > Error on a specific link can be introduced using the add_error function.
+    > All links can be accessed by typing n#1n#2, where #1 and #2 are the nodes the link
+      connected with. For instance, n1n6. #1 will always be the number smaller than #2.
+    """
     def __init__(
             self, netparams = NetworkParams(), tcp_version: TCPVersion = TCPVersion.LinuxReno, verbose: bool = False
         ):
