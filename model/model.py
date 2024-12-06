@@ -9,12 +9,12 @@ import ns.flow_monitor
 
 
 from dataclasses import dataclass
-from .tcp_version import TCPVersion
+from .tcp_version import TCPVersion, map_tcp_verbose
 
 
 @dataclass
 class NetworkParams:
-    latency: float      = 1.
+    latency_ms: float   = 1.
     rate: int           = 500000
     on_off_rate: int    = 300000
     error_rate: float   = 0.0
@@ -29,19 +29,12 @@ def create_channel(a: int, b: int, nodes):
 
 class Model:
     def __init__(
-            self, netparams = NetworkParams(), tcp_type: TCPVersion = TCPVersion.LinuxReno, verbose: bool = False
+            self, netparams = NetworkParams(), tcp_version: TCPVersion = TCPVersion.LinuxReno, verbose: bool = False
         ):
         self.netparams = netparams
         ns.core.RngSeedManager.SetSeed(42)
         if verbose:
-            ns.core.LogComponentEnable(tcp_type.value, ns.core.LOG_LEVEL_LOGIC)
-            #ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
-            #ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
-            #ns.core.LogComponentEnable("PointToPointNetDevice", ns.core.LOG_LEVEL_ALL)
-            #ns.core.LogComponentEnable("DropTailQueue", ns.core.LOG_LEVEL_LOGIC)
-            #ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
-            #ddns.core.LogComponentEnable("TcpWestwood", ns.core.LOG_LEVEL_LOGIC)
-            #ns.core.LogComponentEnable("TcpTahoe", ns.core.iLOG_LEVEL_LOGIC)
+            ns.core.LogComponentEnable(tcp_version.value, map_tcp_verbose(tcp_version))
 
         self.nodes = ns.network.NodeContainer()
         self.nodes.Create(8)
@@ -62,14 +55,14 @@ class Model:
         self.pointToPoint.SetDeviceAttribute("DataRate",
                                     ns.network.DataRateValue(ns.network.DataRate(int(netparams.rate))))
         self.pointToPoint.SetChannelAttribute("Delay",
-                                    ns.core.TimeValue(ns.core.MilliSeconds(int(netparams.latency))))
+                                    ns.core.TimeValue(ns.core.MilliSeconds(int(netparams.latency_ms))))
 
         self.p2p_links = {name: self.pointToPoint.Install(channel)
                     for name, channel in self.channels.items()}
         
         ns.core.Config.SetDefault("ns3::TcpSocket::SegmentSize", ns.core.UintegerValue(1448))
         ns.core.Config.SetDefault("ns3::TcpL4Protocol::SocketType",
-                                  ns.core.StringValue(f"ns3::{tcp_type.value}"))
+                                  ns.core.StringValue(f"ns3::{tcp_version.value}"))
 
         stack = ns.internet.InternetStackHelper()
         stack.Install(self.nodes)
