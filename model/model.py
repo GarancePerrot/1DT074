@@ -1,5 +1,3 @@
-from email.policy import default
-import sys
 import ns.applications
 import ns.core
 import ns.internet
