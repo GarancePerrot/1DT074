@@ -20,13 +20,6 @@ class NetworkParams:
     error_rate: float   = 0.0
 
 
-def create_channel(a: int, b: int, nodes):
-    channel = ns.network.NodeContainer()
-    channel.Add(nodes.Get(a))
-    channel.Add(nodes.Get(b))
-    return channel
-
-
 class Model:
     """
     > To run the basic function of the model:
@@ -59,14 +52,14 @@ class Model:
         self.nodes.Create(8)
 
         self.channels = {
-            "n1n6": create_channel(1, 6, self.nodes),
-            "n2n6": create_channel(2, 6, self.nodes),
-            "n3n7": create_channel(3, 7, self.nodes),
-            "n4n7": create_channel(4, 7, self.nodes),
-            "n0n5": create_channel(0, 5, self.nodes),
-            "n5n6": create_channel(5, 6, self.nodes),
-            "n5n7": create_channel(5, 7, self.nodes),
-            "n6n7": create_channel(6, 7, self.nodes),
+            "n0n5": self.create_channel(0, 5, self.nodes),
+            "n1n6": self.create_channel(1, 6, self.nodes),
+            "n2n6": self.create_channel(2, 6, self.nodes),
+            "n3n7": self.create_channel(3, 7, self.nodes),
+            "n4n7": self.create_channel(4, 7, self.nodes),
+            "n5n6": self.create_channel(5, 6, self.nodes),
+            "n5n7": self.create_channel(5, 7, self.nodes),
+            "n6n7": self.create_channel(6, 7, self.nodes),
             }
 
         self.pointToPoint = ns.point_to_point.PointToPointHelper()
@@ -197,3 +190,9 @@ class Model:
                                                 1024))
         
         ns.core.Simulator.Destroy()
+
+    def create_channel(self, a: int, b: int, nodes):
+        channel = ns.network.NodeContainer()
+        channel.Add(nodes.Get(a))
+        channel.Add(nodes.Get(b))
+        return channel
