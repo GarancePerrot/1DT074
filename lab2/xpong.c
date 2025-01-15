@@ -31,12 +31,13 @@ typedef struct epoch {
   bool cmd_self;
 } epoch_t;
 
-
+//added:
 char recv_data[100] = {0};
 unsigned char* buff = &recv_data;
 static int sock;
 static struct sockaddr_in sock_addr_other;
 static struct sockaddr_in server_addr;
+//end added
 
 int main(int argc, char *argv[argc + 1]) {
   unsigned short port_self = atoi(argv[1]);  /* 9930 */
@@ -70,21 +71,23 @@ int main(int argc, char *argv[argc + 1]) {
        * its flag in epoch_state, and set the command in cmds array. If we
        * receive a acknowledge packet, just mark its flag in epoch_state.
        */
-      int len = recvfrom(sock, buff, sizeof(buff), 0,  // receive buffer from the socket
+      int len = recvfrom(sock, recv_data, sizeof(recv_data), 0,  // receive buffer from the socket
                         (struct sockaddr *)&sock_addr_other, sizeof(sock_addr_other));
       if (len < 0) {
           perror("\nError: failed to receive packet");
+          net_fini();
+          win_fini();
           return -1;
       }
 
-      net_packet_t* pkt;   // create new packet
-      deserialise(pkt, buff); // retrieve info in packet format
-      int poll = net_poll(pkt);
+      net_packet_t pkt;   // create new packet 
+      deserialise(&pkt, buff); // retrieve info in packet format
+      int poll = net_poll(&pkt);
       if (poll==1) { // poll==1 , receive a command packet: 
         net_packet_t ack_pkt = {1, epoch, 0}; // acknowledgement packet
         net_send(&ack_pkt); // send the ack
         epoch_state.cmd = true; //mark its flag in epoch_state
-        cmds[player] = pkt->input; // set the command in cmds array
+        cmds[player] = pkt.input; // set the command in cmds array
       } 
       else { // we receive an ack packet:
         epoch_state.ack = true;
@@ -99,8 +102,8 @@ int main(int argc, char *argv[argc + 1]) {
       }
 
       /* TODO: Send a command packet. */
-      net_packet_t* cmd_pkt = {0, epoch, cmds[player]};
-      net_send(cmd_pkt);
+      net_packet_t cmd_pkt = {0, epoch, cmds[player]};
+      net_send(&cmd_pkt);
 
       /* TODO: Add conditions for simulation. To simulate and move onto the next
          epoch, we must have received the command packet and the acknowledge
