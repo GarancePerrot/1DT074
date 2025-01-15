@@ -34,7 +34,7 @@ void net_init(unsigned short port_self, const char *hostname_other,
   sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
   if (sock < 0) {
 		perror("\nCannot create socket");
-	    return -1;
+	    return;
 	}
 
 // 2. (Prepare sock add structure and) bind the socket to port_self
@@ -45,7 +45,7 @@ void net_init(unsigned short port_self, const char *hostname_other,
 
   if (bind(sock, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
     perror("\nError: bind failed");
-    return -1;
+    return;
   }
 
 // 3. Set sock_addr_other to the socket address at hostname_other and port_other.
@@ -113,7 +113,7 @@ void net_send(const net_packet_t *pkt) {
       (const struct sockaddr *)&sock_addr_other, sizeof(sock_addr_other)); 
   if (len < 0) {
       perror("\nCannot send packet");
-      return -1;
+      return;
   } 
   printf("\nSent data:%s", buff);
 }

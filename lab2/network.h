@@ -18,6 +18,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include "includes.h"
 
 typedef struct net_packet {
   /* TODO: Declare variables according to the protocol. */

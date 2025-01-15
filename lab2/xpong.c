@@ -32,11 +32,12 @@ typedef struct epoch {
 } epoch_t;
 
 //added:
-char recv_data[100] = {0};
+unsigned char recv_data[100] = {0};
 unsigned char* buff = &recv_data;
 static int sock;
 static struct sockaddr_in sock_addr_other;
-static struct sockaddr_in server_addr;
+static struct sockaddr_in sock_addr;
+socklen_t sao_size = sizeof(sock_addr_other);
 //end added
 
 int main(int argc, char *argv[argc + 1]) {
@@ -72,7 +73,7 @@ int main(int argc, char *argv[argc + 1]) {
        * receive a acknowledge packet, just mark its flag in epoch_state.
        */
       int len = recvfrom(sock, recv_data, sizeof(recv_data), 0,  // receive buffer from the socket
-                        (struct sockaddr *)&sock_addr_other, sizeof(sock_addr_other));
+                        (struct sockaddr *)&sock_addr_other, &sao_size);
       if (len < 0) {
           perror("\nError: failed to receive packet");
           net_fini();
@@ -80,7 +81,7 @@ int main(int argc, char *argv[argc + 1]) {
           return -1;
       }
 
-      net_packet_t pkt;   // create new packet 
+      net_packet_t pkt;   // create new packet
       deserialise(&pkt, buff); // retrieve info in packet format
       int poll = net_poll(&pkt);
       if (poll==1) { // poll==1 , receive a command packet: 
