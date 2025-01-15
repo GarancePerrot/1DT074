@@ -112,5 +112,16 @@ int net_poll(net_packet_t *pkt) {
 
 void net_send(const net_packet_t *pkt) {
   /* TODO: Serialise and send the packet to the other's socket. */
+
+  unsigned char* buff; 
+  serialise(buff,pkt);
+
+  int len = sendto(sockfd,(const char*)buff, sizeof(buff), 0,
+      (const struct sockaddr *)&sock_addr_other, sizeof(sock_addr_other)); 
+  if (len < 0) {
+      perror("\nCannot send packet");
+      return -1;
+  } 
+  printf("\nSent data:%s", buff);
 }
 /**/
