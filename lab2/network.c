@@ -34,6 +34,7 @@ void net_init(unsigned short port_self, const char *hostname_other,
 	}
 
 // 2. (Prepare sock add structure and) bind the socket to port_self
+  struct sockaddr_in sock_addr;
   memset(&sock_addr, '\0', sizeof(sock_addr));
   sock_addr.sin_family = AF_INET; 
   sock_addr.sin_addr.s_addr = INADDR_ANY; // bind to any available IP address

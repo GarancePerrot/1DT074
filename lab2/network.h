@@ -20,9 +20,9 @@
 
 #include "includes.h"
 
-static int sock;
-static struct sockaddr_in sock_addr_other;
-static struct sockaddr_in sock_addr;
+int sock;
+struct sockaddr_in sock_addr_other;
+
 
 
 typedef struct net_packet {
