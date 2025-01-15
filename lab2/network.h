@@ -20,6 +20,11 @@
 
 #include "includes.h"
 
+static int sock;
+static struct sockaddr_in sock_addr_other;
+static struct sockaddr_in sock_addr;
+
+
 typedef struct net_packet {
   /* TODO: Declare variables according to the protocol. */
   uint8_t opcode; // 1 byte: 0 or 1
@@ -33,4 +38,6 @@ void net_fini();
 void net_send(const net_packet_t *pkt);
 int net_poll(net_packet_t *pkt);
 
+void serialise(unsigned char *buff, const net_packet_t *pkt);
+void deserialise(net_packet_t *pkt, const unsigned char *buff);
 #endif

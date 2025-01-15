@@ -32,10 +32,10 @@ typedef struct epoch {
 } epoch_t;
 
 //added:
-unsigned char buff[100] = {0};
-static int sock;
-static struct sockaddr_in sock_addr_other;
-static struct sockaddr_in sock_addr;
+unsigned char buff[100];
+// static int sock;
+// static struct sockaddr_in sock_addr_other;
+// static struct sockaddr_in sock_addr;
 socklen_t sao_size = sizeof(sock_addr_other);
 //end added
 
@@ -81,7 +81,8 @@ int main(int argc, char *argv[argc + 1]) {
       }
 
       net_packet_t pkt;   // create new packet
-      deserialise(&pkt, &buff); // retrieve info in packet format
+      const unsigned char* cbuff = buff;
+      deserialise(&pkt, cbuff); // retrieve info in packet format
       int poll = net_poll(&pkt);
       if (poll==1) { // poll==1 , receive a command packet: 
         net_packet_t ack_pkt = {1, epoch, 0}; // acknowledgement packet

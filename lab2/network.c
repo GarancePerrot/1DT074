@@ -16,11 +16,7 @@
  */
 
 #include "network.h"
-#include "includes.h"
 
-static int sock;
-static struct sockaddr_in sock_addr_other;
-static struct sockaddr_in sock_addr;
 
 void net_init(unsigned short port_self, const char *hostname_other,
               unsigned short port_other) {
@@ -60,7 +56,7 @@ void net_fini() { /* TODO: Shutdown the socket. */
   close(sock); 
 }
 
-static void serialise(unsigned char *buff, const net_packet_t *pkt) {
+void serialise(unsigned char *buff, const net_packet_t *pkt) {
   // converting the data within the packet into a sequence of bytes that can be transmitted
 
   /* TODO:
@@ -80,7 +76,7 @@ static void serialise(unsigned char *buff, const net_packet_t *pkt) {
 
 }
 
-static void deserialise(net_packet_t *pkt, const unsigned char *buff) {
+void deserialise(net_packet_t *pkt, const unsigned char *buff) {
   /* TODO: Deserialise the packet into the net_packet structure. */
 
   //ntohs converts data from network byte order to the host's native byte order.
@@ -106,7 +102,7 @@ int net_poll(net_packet_t *pkt) {
 void net_send(const net_packet_t *pkt) {
   /* TODO: Serialise and send the packet to the other's socket. */
 
-  unsigned char* buff; 
+  unsigned char buff[100]; 
   serialise(buff,pkt);
 
   int len = sendto(sock,(const char*)buff, sizeof(buff), 0,
@@ -115,6 +111,5 @@ void net_send(const net_packet_t *pkt) {
       perror("\nCannot send packet");
       return;
   } 
-  printf("\nSent data:%s", buff);
 }
 /**/
