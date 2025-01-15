@@ -33,6 +33,9 @@ typedef struct epoch {
 
 
 unsigned char* buff;
+static int sock;
+static struct sockaddr_in sock_addr_other;
+static struct sockaddr_in server_addr;
 
 int main(int argc, char *argv[argc + 1]) {
   unsigned short port_self = atoi(argv[1]);  /* 9930 */
@@ -76,9 +79,9 @@ int main(int argc, char *argv[argc + 1]) {
       net_packet_t* pkt;   // create new packet
       deserialise(pkt, buff); // retrieve info in packet format
       int poll = net_poll(pkt);
-      if poll { // poll==1 , receive a command packet: 
+      if (poll==1) { // poll==1 , receive a command packet: 
         net_packet_t ack_pkt = {1, epoch, 0}; // acknowledgement packet
-        net_send(ack_pkt); // send the ack
+        net_send(&ack_pkt); // send the ack
         epoch_state.cmd = true; //mark its flag in epoch_state
         cmds[player] = pkt->input; // set the command in cmds array
       } 

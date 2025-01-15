@@ -99,7 +99,7 @@ int net_poll(net_packet_t *pkt) {
   /* TODO: Poll a packet from the socket.
    * Returns 0 if nothing to be read from the socket.
    * Returns 1 otherwise.*/
-  res = !(pky->opcode); //if opcode is 1 (ack), there is nothing to be read so return 0, and conversely
+  int res = !(pkt->opcode); //if opcode is 1 (ack), there is nothing to be read so return 0, and conversely
   return res;
 }
 
