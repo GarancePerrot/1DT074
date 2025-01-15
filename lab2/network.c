@@ -17,56 +17,97 @@
 
 #include "network.h"
 #include "sys/socket.h"
-
+#include "sys/types"
 #include <arpa/inet.h>
 #include <assert.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
-#include <stdint.h>
 #include <unistd.h>
 
 static int sock;
 static struct sockaddr_in sock_addr_other;
+static struct sockaddr_in server_addr;
 
 void net_init(unsigned short port_self, const char *hostname_other,
               unsigned short port_other) {
-  /*
-   * TODO:
-   *
+  /* TODO:
    * 1. Create a UDP socket.
-   *
    * 2. Bind the socket to port_self.
-   *
    * 3. Set sock_addr_other to the socket address at hostname_other and
-   * port_other.
-   *
-   */
+   * port_other. */
+
+// 1. Create a UDP socket.
+  sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
+  if (sock < 0) {
+		perror("\nCannot create socket");
+	    return -1;
+	}
+
+// 2. (Prepare server add structure and) bind the socket to port_self
+  memset(&server_addr, '\0', sizeof(server_addr));
+  server_addr.sin_family = AF_INET; 
+  server_addr.sin_addr.s_addr = INADDR_ANY; // bind to any available IP address
+  server_addr.sin_port = htons(port_self);
+
+  if (bind(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    perror("\nError: bind failed");
+    return -1;
+  }
+
+// 3. Set sock_addr_other to the socket address at hostname_other and port_other.
+  memset(&sock_addr_other, '\0' , sizeof(sock_addr_other));
+  sock_addr_other.sin_family = AF_INET;
+  sock_addr_other.sin_port = htons(port_other);
+  sock_addr_other.sin_addr.s_addr = inet_addr(hostname_other); //inet_addr converts the char into a valid ip address
+
 }
 
-void net_fini() { /* TODO: Shutdown the socket. */ }
+void net_fini() { /* TODO: Shutdown the socket. */
+  close(sock); 
+}
 
 static void serialise(unsigned char *buff, const net_packet_t *pkt) {
+  // converting the data within the packet into a sequence of bytes that can be transmitted
+
   /* TODO:
-   *
    * Serialise the packet according to the protocol.
-   *
-   * Note that it must use network endian.
-   */
+   * Note that it must use network endian.*/
+
+  // htons convert data from the host's native byte order to the network byte order before transmission
+
+  *(uint8_t*)buff = htons(pkt->opcode);  // casts buff to a pointer of the type of opcode and copies
+  buff += sizeof(uint8_t);  // increments pointer
+
+  *(uint16_t*)buff = htons(pkt->epoch);
+  buff += sizeof(uint16_t);
+
+  *(uint8_t*)buff = htons(pkt->input);
+  buff += sizeof(uint8_t);
+
 }
 
 static void deserialise(net_packet_t *pkt, const unsigned char *buff) {
   /* TODO: Deserialise the packet into the net_packet structure. */
+
+  //ntohs converts data from network byte order to the host's native byte order.
+
+  pkt->opcode = ntohs(*(uint8_t*)buff); 
+  buff += sizeof(uint8_t);
+
+  pkt->epoch = ntohs(*(uint16_t*)buff);
+  buff += sizeof(uint16_t);
+
+  pkt->input = ntohs(*(uint8_t*)buff);
+  buff += sizeof(uint8_t);
 }
 
 int net_poll(net_packet_t *pkt) {
   /* TODO: Poll a packet from the socket.
-   *
    * Returns 0 if nothing to be read from the socket.
-   *
-   * Returns 1 otherwise.
-   */
-  return 0;
+   * Returns 1 otherwise.*/
+  res = !(pky->opcode); //if opcode is 1 (ack), there is nothing to be read so return 0, and conversely
+  return res;
 }
 
 void net_send(const net_packet_t *pkt) {

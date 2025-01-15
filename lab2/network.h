@@ -18,8 +18,13 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include <stdint.h>
+
 typedef struct net_packet {
   /* TODO: Declare variables according to the protocol. */
+  uint8_t opcode; // 1 byte: 0 or 1
+  uint16_t epoch; // 2 bytes : epoch nb
+  uint8_t input; // 1 byte : 0 none, 1 up, 2 down
 } net_packet_t;
 
 void net_init(unsigned short port_self, const char *hostname_other,
