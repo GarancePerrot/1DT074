@@ -32,7 +32,8 @@ typedef struct epoch {
 } epoch_t;
 
 
-unsigned char* buff;
+char recv_data[100] = {0};
+unsigned char* buff = &recv_data;
 static int sock;
 static struct sockaddr_in sock_addr_other;
 static struct sockaddr_in server_addr;

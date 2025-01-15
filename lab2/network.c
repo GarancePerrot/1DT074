@@ -20,7 +20,7 @@
 
 static int sock;
 static struct sockaddr_in sock_addr_other;
-static struct sockaddr_in server_addr;
+static struct sockaddr_in sock_addr;
 
 void net_init(unsigned short port_self, const char *hostname_other,
               unsigned short port_other) {
@@ -37,13 +37,13 @@ void net_init(unsigned short port_self, const char *hostname_other,
 	    return -1;
 	}
 
-// 2. (Prepare server add structure and) bind the socket to port_self
-  memset(&server_addr, '\0', sizeof(server_addr));
-  server_addr.sin_family = AF_INET; 
-  server_addr.sin_addr.s_addr = INADDR_ANY; // bind to any available IP address
-  server_addr.sin_port = htons(port_self);
+// 2. (Prepare sock add structure and) bind the socket to port_self
+  memset(&sock_addr, '\0', sizeof(sock_addr));
+  sock_addr.sin_family = AF_INET; 
+  sock_addr.sin_addr.s_addr = INADDR_ANY; // bind to any available IP address
+  sock_addr.sin_port = htons(port_self);
 
-  if (bind(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+  if (bind(sock, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
     perror("\nError: bind failed");
     return -1;
   }
