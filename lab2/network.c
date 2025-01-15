@@ -16,14 +16,7 @@
  */
 
 #include "network.h"
-#include "sys/socket.h"
-#include "sys/types"
-#include <arpa/inet.h>
-#include <assert.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <poll.h>
-#include <unistd.h>
+#include "includes.h"
 
 static int sock;
 static struct sockaddr_in sock_addr_other;
@@ -116,7 +109,7 @@ void net_send(const net_packet_t *pkt) {
   unsigned char* buff; 
   serialise(buff,pkt);
 
-  int len = sendto(sockfd,(const char*)buff, sizeof(buff), 0,
+  int len = sendto(sock,(const char*)buff, sizeof(buff), 0,
       (const struct sockaddr *)&sock_addr_other, sizeof(sock_addr_other)); 
   if (len < 0) {
       perror("\nCannot send packet");

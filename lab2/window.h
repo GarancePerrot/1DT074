@@ -20,8 +20,7 @@
 
 #include "simulate.h"
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "includes.h"
 
 typedef struct win_event {
   bool quit, up, down;
