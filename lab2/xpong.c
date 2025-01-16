@@ -46,6 +46,8 @@ int main(int argc, char *argv[argc + 1]) {
   unsigned short port_other = atoi(argv[3]); /* 9931 */
   int player = atol(argv[4]);                /* 0 */
 
+  printf("test");
+
   state_t state = sim_init(SCREEN_WIDTH, SCREEN_HEIGHT);
   win_init(SCREEN_WIDTH, SCREEN_HEIGHT);
   net_init(&sock, &sock_addr_other, port_self, hostname_other, port_other, sao_size);
