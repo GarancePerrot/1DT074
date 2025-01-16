@@ -48,7 +48,7 @@ int main(int argc, char *argv[argc + 1]) {
 
   state_t state = sim_init(SCREEN_WIDTH, SCREEN_HEIGHT);
   win_init(SCREEN_WIDTH, SCREEN_HEIGHT);
-  net_init(&sock, &sock_addr_other, port_self, hostname_other, port_other);
+  net_init(&sock, &sock_addr_other, port_self, hostname_other, port_other, sao_size);
 
   uint16_t epoch = 0;
   epoch_t epoch_state = {false, false, false};
