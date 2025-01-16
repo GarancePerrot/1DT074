@@ -30,9 +30,9 @@ typedef struct net_packet {
 } net_packet_t;
 
 void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
-              unsigned short port_other);
+              unsigned short port_other, socklen_t sao_size);
 void net_fini(int* sock);
-void net_send(int* sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt);
+void net_send(int* sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt,  unsigned char *buff, socklen_t sao_size);
 int net_poll(net_packet_t *pkt);
 
 void serialise(unsigned char *buff, const net_packet_t *pkt);

@@ -32,7 +32,8 @@ typedef struct epoch {
 } epoch_t;
 
 //added:
-unsigned char buff[100];
+unsigned char rec_buff[100];
+unsigned char send_buff[100];
 
 int sock;
 struct sockaddr_in sock_addr_other;
@@ -71,7 +72,7 @@ int main(int argc, char *argv[argc + 1]) {
        * its flag in epoch_state, and set the command in cmds array. If we
        * receive a acknowledge packet, just mark its flag in epoch_state.
        */
-      int len = recvfrom(sock, buff, sizeof(buff), 0,  // receive buffer from the socket
+      int len = recvfrom(sock, rec_buff, sizeof(rec_buff), 0,  // receive buffer from the socket
                         (struct sockaddr *)&sock_addr_other, &sao_size);
       if (len < 0) {
           perror("\nError: failed to receive packet");
@@ -81,12 +82,12 @@ int main(int argc, char *argv[argc + 1]) {
       }
 
       net_packet_t pkt;   // create new packet
-      const unsigned char* cbuff = buff;
+      const unsigned char* cbuff = rec_buff;
       deserialise(&pkt, cbuff); // retrieve info in packet format
       int poll = net_poll(&pkt);
       if (poll==1) { // poll==1 , receive a command packet: 
         net_packet_t ack_pkt = {1, epoch, 0}; // acknowledgement packet
-        net_send(&sock, &sock_addr_other, &ack_pkt); // send the ack
+        net_send(&sock, &sock_addr_other, &ack_pkt, send_buff, sao_size); // send the ack
         epoch_state.cmd = true; //mark its flag in epoch_state
         cmds[player] = pkt.input; // set the command in cmds array
       } 
@@ -104,7 +105,7 @@ int main(int argc, char *argv[argc + 1]) {
 
       /* TODO: Send a command packet. */
       net_packet_t cmd_pkt = {0, epoch, cmds[player]};
-      net_send(&sock, &sock_addr_other, &cmd_pkt);
+      net_send(&sock, &sock_addr_other, &cmd_pkt, send_buff, sao_size);
 
       /* TODO: Add conditions for simulation. To simulate and move onto the next
          epoch, we must have received the command packet and the acknowledge

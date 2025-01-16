@@ -19,7 +19,7 @@
 
 
 void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
-              unsigned short port_other) {
+              unsigned short port_other, socklen_t sao_size) {
   /* TODO:
    * 1. Create a UDP socket.
    * 2. Bind the socket to port_self.
@@ -46,7 +46,7 @@ void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short por
   }
 
 // 3. Set sock_addr_other to the socket address at hostname_other and port_other.
-  memset(sock_addr_other, '\0' , sizeof(*sock_addr_other));
+  memset(sock_addr_other, '\0' , sao_size);
   sock_addr_other->sin_family = AF_INET;
   sock_addr_other->sin_port = htons(port_other);
   sock_addr_other->sin_addr.s_addr = inet_addr(hostname_other); //inet_addr converts the char into a valid ip address
@@ -100,14 +100,13 @@ int net_poll(net_packet_t *pkt) {
   return res;
 }
 
-void net_send(int* sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt) {
+void net_send(int* sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt,  unsigned char *buff, socklen_t sao_size) {
   /* TODO: Serialise and send the packet to the other's socket. */
-
-  unsigned char buff[100]; 
+ 
   serialise(buff,pkt);
 
   int len = sendto(*sock,(const char*)buff, sizeof(buff), 0,
-      (const struct sockaddr *)sock_addr_other, sizeof(*sock_addr_other)); 
+      (const struct sockaddr *)sock_addr_other, sao_size); 
   if (len < 0) {
       perror("\nCannot send packet");
       return;
