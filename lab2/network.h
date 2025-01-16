@@ -20,9 +20,6 @@
 
 #include "includes.h"
 
-int sock;
-struct sockaddr_in sock_addr_other;
-
 
 
 typedef struct net_packet {
@@ -32,10 +29,10 @@ typedef struct net_packet {
   uint8_t input; // 1 byte : 0 none, 1 up, 2 down
 } net_packet_t;
 
-void net_init(unsigned short port_self, const char *hostname_other,
+void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
               unsigned short port_other);
-void net_fini();
-void net_send(const net_packet_t *pkt);
+void net_fini(int* sock);
+void net_send(int* sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt);
 int net_poll(net_packet_t *pkt);
 
 void serialise(unsigned char *buff, const net_packet_t *pkt);

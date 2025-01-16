@@ -33,9 +33,9 @@ typedef struct epoch {
 
 //added:
 unsigned char buff[100];
-// static int sock;
-// static struct sockaddr_in sock_addr_other;
-// static struct sockaddr_in sock_addr;
+
+int sock;
+struct sockaddr_in sock_addr_other;
 socklen_t sao_size = sizeof(sock_addr_other);
 //end added
 
@@ -47,7 +47,7 @@ int main(int argc, char *argv[argc + 1]) {
 
   state_t state = sim_init(SCREEN_WIDTH, SCREEN_HEIGHT);
   win_init(SCREEN_WIDTH, SCREEN_HEIGHT);
-  net_init(port_self, hostname_other, port_other);
+  net_init(&sock, &sock_addr_other, port_self, hostname_other, port_other);
 
   uint16_t epoch = 0;
   epoch_t epoch_state = {false, false, false};
@@ -75,7 +75,7 @@ int main(int argc, char *argv[argc + 1]) {
                         (struct sockaddr *)&sock_addr_other, &sao_size);
       if (len < 0) {
           perror("\nError: failed to receive packet");
-          net_fini();
+          net_fini(&sock);
           win_fini();
           return -1;
       }
@@ -86,7 +86,7 @@ int main(int argc, char *argv[argc + 1]) {
       int poll = net_poll(&pkt);
       if (poll==1) { // poll==1 , receive a command packet: 
         net_packet_t ack_pkt = {1, epoch, 0}; // acknowledgement packet
-        net_send(&ack_pkt); // send the ack
+        net_send(&sock, &sock_addr_other, &ack_pkt); // send the ack
         epoch_state.cmd = true; //mark its flag in epoch_state
         cmds[player] = pkt.input; // set the command in cmds array
       } 
@@ -104,7 +104,7 @@ int main(int argc, char *argv[argc + 1]) {
 
       /* TODO: Send a command packet. */
       net_packet_t cmd_pkt = {0, epoch, cmds[player]};
-      net_send(&cmd_pkt);
+      net_send(&sock, &sock_addr_other, &cmd_pkt);
 
       /* TODO: Add conditions for simulation. To simulate and move onto the next
          epoch, we must have received the command packet and the acknowledge
@@ -122,7 +122,7 @@ int main(int argc, char *argv[argc + 1]) {
     }
   }
 
-  net_fini();
+  net_fini(&sock);
   win_fini();
   return 0;
 }

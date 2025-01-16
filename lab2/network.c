@@ -18,7 +18,7 @@
 #include "network.h"
 
 
-void net_init(unsigned short port_self, const char *hostname_other,
+void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
               unsigned short port_other) {
   /* TODO:
    * 1. Create a UDP socket.
@@ -27,8 +27,8 @@ void net_init(unsigned short port_self, const char *hostname_other,
    * port_other. */
 
 // 1. Create a UDP socket.
-  sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
-  if (sock < 0) {
+  *sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
+  if (*sock < 0) {
 		perror("\nCannot create socket");
 	    return;
 	}
@@ -40,21 +40,21 @@ void net_init(unsigned short port_self, const char *hostname_other,
   sock_addr.sin_addr.s_addr = INADDR_ANY; // bind to any available IP address
   sock_addr.sin_port = htons(port_self);
 
-  if (bind(sock, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
+  if (bind(*sock, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
     perror("\nError: bind failed");
     return;
   }
 
 // 3. Set sock_addr_other to the socket address at hostname_other and port_other.
-  memset(&sock_addr_other, '\0' , sizeof(sock_addr_other));
-  sock_addr_other.sin_family = AF_INET;
-  sock_addr_other.sin_port = htons(port_other);
-  sock_addr_other.sin_addr.s_addr = inet_addr(hostname_other); //inet_addr converts the char into a valid ip address
+  memset(sock_addr_other, '\0' , sizeof(*sock_addr_other));
+  sock_addr_other->sin_family = AF_INET;
+  sock_addr_other->sin_port = htons(port_other);
+  sock_addr_other->sin_addr.s_addr = inet_addr(hostname_other); //inet_addr converts the char into a valid ip address
 
 }
 
-void net_fini() { /* TODO: Shutdown the socket. */
-  close(sock); 
+void net_fini(int* sock) { /* TODO: Shutdown the socket. */
+  close(*sock); 
 }
 
 void serialise(unsigned char *buff, const net_packet_t *pkt) {
@@ -100,14 +100,14 @@ int net_poll(net_packet_t *pkt) {
   return res;
 }
 
-void net_send(const net_packet_t *pkt) {
+void net_send(int* sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt) {
   /* TODO: Serialise and send the packet to the other's socket. */
 
   unsigned char buff[100]; 
   serialise(buff,pkt);
 
-  int len = sendto(sock,(const char*)buff, sizeof(buff), 0,
-      (const struct sockaddr *)&sock_addr_other, sizeof(sock_addr_other)); 
+  int len = sendto(*sock,(const char*)buff, sizeof(buff), 0,
+      (const struct sockaddr *)sock_addr_other, sizeof(*sock_addr_other)); 
   if (len < 0) {
       perror("\nCannot send packet");
       return;
