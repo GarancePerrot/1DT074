@@ -18,7 +18,7 @@
 #include "network.h"
 
 
-void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
+void net_init(int sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
               unsigned short port_other, socklen_t sao_size) {
   /* TODO:
    * 1. Create a UDP socket.
@@ -27,8 +27,8 @@ void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short por
    * port_other. */
 
 // 1. Create a UDP socket.
-  *sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
-  if (*sock < 0) {
+  sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
+  if (sock < 0) {
 		perror("\nCannot create socket");
 	    return;
 	}
@@ -40,7 +40,7 @@ void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short por
   sock_addr.sin_addr.s_addr = INADDR_ANY; // bind to any available IP address
   sock_addr.sin_port = htons(port_self);
 
-  if (bind(*sock, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
+  if (bind(sock, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
     perror("\nError: bind failed");
     return;
   }
@@ -53,8 +53,8 @@ void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short por
 
 }
 
-void net_fini(int* sock) { /* TODO: Shutdown the socket. */
-  close(*sock); 
+void net_fini(int sock) { /* TODO: Shutdown the socket. */
+  close(sock); 
 }
 
 void serialise(unsigned char *buff, const net_packet_t *pkt) {
@@ -100,12 +100,12 @@ int net_poll(net_packet_t *pkt) {
   return res;
 }
 
-void net_send(int* sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt,  unsigned char *buff, socklen_t sao_size) {
+void net_send(int sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt,  unsigned char *buff, socklen_t sao_size) {
   /* TODO: Serialise and send the packet to the other's socket. */
  
   serialise(buff,pkt);
 
-  int len = sendto(*sock,(const char*)buff, sizeof(buff), 0,
+  int len = sendto(sock,(const char*)buff, sizeof(buff), 0,
       (const struct sockaddr *)sock_addr_other, sao_size); 
   if (len < 0) {
       perror("\nCannot send packet");
