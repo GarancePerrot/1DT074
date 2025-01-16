@@ -20,7 +20,8 @@
 
 #include "simulate.h"
 
-#include "includes.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 typedef struct win_event {
   bool quit, up, down;
@@ -38,4 +39,3 @@ void win_render(const state_t *state);
 uint32_t win_tick();
 
 #endif
-
