@@ -18,7 +18,7 @@
 #include "network.h"
 
 
-void net_init(int sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
+void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
               unsigned short port_other, socklen_t sao_size) {
   /* TODO:
    * 1. Create a UDP socket.
@@ -27,8 +27,8 @@ void net_init(int sock, struct sockaddr_in* sock_addr_other, unsigned short port
    * port_other. */
 
 // 1. Create a UDP socket.
-  sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
-  if (sock < 0) {
+  *sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
+  if (*sock < 0) {
 		perror("\nCannot create socket");
 	    return;
 	}
@@ -40,7 +40,7 @@ void net_init(int sock, struct sockaddr_in* sock_addr_other, unsigned short port
   sock_addr.sin_addr.s_addr = INADDR_ANY; // bind to any available IP address
   sock_addr.sin_port = htons(port_self);
 
-  if (bind(sock, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
+  if (bind(*sock, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
     perror("\nError: bind failed");
     return;
   }
@@ -53,8 +53,8 @@ void net_init(int sock, struct sockaddr_in* sock_addr_other, unsigned short port
 
 }
 
-void net_fini(int sock) { /* TODO: Shutdown the socket. */
-  close(sock); 
+void net_fini(int* sock) { /* TODO: Shutdown the socket. */
+  close(*sock); 
 }
 
 void serialise(unsigned char *buff, const net_packet_t *pkt) {
