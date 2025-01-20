@@ -19,7 +19,6 @@
 #define SIMULATE_H
 
 #include <stdint.h>
-#include "includes.h"
 
 #define NPLAYER 2
 

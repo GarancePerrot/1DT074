@@ -19,114 +19,110 @@
 #include "simulate.h"
 #include "unistd.h"
 #include "window.h"
-#include "includes.h"
+
+#include <assert.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 static const int SCREEN_WIDTH = 720;
 static const int SCREEN_HEIGHT = 640;
 static const int SIM_INTERVAL = 10;
 
 typedef struct epoch {
-  bool cmd;
-  bool ack;
-  bool cmd_self;
+	bool cmd;
+	bool ack;
+	bool cmd_self;
 } epoch_t;
 
-//added:
-unsigned char rec_buff[100];
-unsigned char send_buff[100];
+int main(int argc, char *argv[argc + 1])
+{
+	unsigned short port_self = atoi(argv[1]);  /* 9930 */
+	const char *hostname_other = argv[2];	   /* "127.0.0.1" */
+	unsigned short port_other = atoi(argv[3]); /* 9931 */
+	int player = atol(argv[4]);		   /* 0 */
 
-int sock;
-struct sockaddr_in sock_addr_other;
-socklen_t sao_size = sizeof(sock_addr_other);
-//end added
+	state_t state = sim_init(SCREEN_WIDTH, SCREEN_HEIGHT);
+	win_init(SCREEN_WIDTH, SCREEN_HEIGHT);
+	net_init(port_self, hostname_other, port_other);
 
-int main(int argc, char *argv[argc + 1]) {
-  unsigned short port_self = atoi(argv[1]);  /* 9930 */
-  const char *hostname_other = argv[2];      /* "127.0.0.1" */
-  unsigned short port_other = atoi(argv[3]); /* 9931 */
-  int player = atol(argv[4]);                /* 0 */
+	uint16_t epoch = 0;
+	epoch_t epoch_state = {false, false, false};
+	cmd_t cmds[2];
+	bool quit = false;
 
-  printf("test");
+	uint32_t previous_tick = win_tick();
 
-  state_t state = sim_init(SCREEN_WIDTH, SCREEN_HEIGHT);
-  win_init(SCREEN_WIDTH, SCREEN_HEIGHT);
-  net_init(&sock, &sock_addr_other, port_self, hostname_other, port_other, sao_size);
+	while (!quit) {
+		win_event_t e = win_poll_event();
+		if (e.quit)
+			quit = true;
 
-  uint16_t epoch = 0;
-  epoch_t epoch_state = {false, false, false};
-  cmd_t cmds[2]; // typedef enum { CMD_NONE, CMD_UP, CMD_DOWN } cmd_t;
-  bool quit = false;
+		for (; win_tick() - previous_tick > SIM_INTERVAL;
+		     previous_tick += SIM_INTERVAL) {
+			/*
+			 * TODO: Poll and handle each packet until no more
+			 * packet.
+			 *
+			 * If we receive a command packet, send an
+			 * acknowledgement packet, mark its flag in epoch_state,
+			 * and set the command in cmds array. If we receive a
+			 * acknowledge packet, just mark its flag in
+			 * epoch_state.
+			 */
+			net_packet_t pkt;
+			while (net_poll(&pkt)) {
+				if (pkt.cmd == OP_ACK)
+					epoch_state.ack = true;
+				else if (pkt.cmd == OP_CMD) {
+					epoch_state.cmd = true;
+					cmds[1 - player] = pkt.input;
+					net_packet_t ack_pkt = {.cmd = OP_ACK,
+								.epoch = epoch,
+								.input = 0};
+					net_send(&ack_pkt);
+                }
+			}
 
-  uint32_t previous_tick = win_tick();
+			/* TODO: Update cmds[player] and set cmd_self in
+			   epoch_state if cmd_self is not set */
+			if (!epoch_state.cmd_self) {
+				cmds[player] =
+				    (e.up ^ e.down) *
+				    (e.up * CMD_UP + e.down * CMD_DOWN);
+				epoch_state.cmd_self = true;
+			}
 
-  while (!quit) {
-    win_event_t e = win_poll_event();
-    if (e.quit)
-      quit = true;
+			/* TODO: Send a command packet. */
+			net_packet_t cmd_pkt = {.cmd = OP_CMD,
+						.epoch = epoch,
+						.input = cmds[player]};
+			net_send(&cmd_pkt);
 
-    for (; win_tick() - previous_tick > SIM_INTERVAL;
-         previous_tick += SIM_INTERVAL) {
-    //until here: given
 
-      /*
-       * TODO: Poll and handle each packet until no more packet. 
-      * If we receive a command packet, send an acknowledgement packet, mark
-       * its flag in epoch_state, and set the command in cmds array. If we
-       * receive a acknowledge packet, just mark its flag in epoch_state.
-       */
-      int len = recvfrom(sock, rec_buff, sizeof(rec_buff), 0,  // receive buffer from the socket
-                        (struct sockaddr *)&sock_addr_other, &sao_size);
-      if (len < 0) {
-          perror("\nError: failed to receive packet");
-          net_fini(&sock);
-          win_fini();
-          return -1;
-      }
+			/* TODO: Add conditions for simulation. To simulate and
+			   move onto the next epoch, we must have received the
+			   command packet and the acknowledge packet from the
+			   other player. */
+			if (epoch_state.ack && epoch_state.cmd) {
+				state = sim_update(&state, cmds,
+						   SIM_INTERVAL / 1000.f);
+				++epoch;
+				epoch_state.cmd_self = epoch_state.cmd =
+				    epoch_state.ack = false;
+                win_render(&state);
+			}
+		}
+	}
 
-      net_packet_t pkt;   // create new packet
-      const unsigned char* cbuff = rec_buff;
-      deserialise(&pkt, cbuff); // retrieve info in packet format
-      int poll = net_poll(&pkt);
-      if (poll==1) { // poll==1 , receive a command packet: 
-        net_packet_t ack_pkt = {1, epoch, 0}; // acknowledgement packet
-        net_send(sock, &sock_addr_other, &ack_pkt, send_buff, sao_size); // send the ack
-        epoch_state.cmd = true; //mark its flag in epoch_state
-        cmds[player] = pkt.input; // set the command in cmds array
-      } 
-      else { // we receive an ack packet:
-        epoch_state.ack = true;
-      }
-
-      /* TODO: Update cmds[player] and set cmd_self in epoch_state if cmd_self
-         is not set */
-      cmds[player] = (e.up ^ e.down) * (e.up * CMD_UP + e.down * CMD_DOWN); //given
-
-      if (epoch_state.cmd_self == false) {
-        epoch_state.cmd_self = true;
-      }
-
-      /* TODO: Send a command packet. */
-      net_packet_t cmd_pkt = {0, epoch, cmds[player]};
-      net_send(sock, &sock_addr_other, &cmd_pkt, send_buff, sao_size);
-
-      /* TODO: Add conditions for simulation. To simulate and move onto the next
-         epoch, we must have received the command packet and the acknowledge
-         packet from the other player. */
-      if (epoch_state.cmd && epoch_state.ack){
-      //begin given:
-        state = sim_update(&state, cmds, SIM_INTERVAL / 1000.f); 
-        ++epoch;                                                  
-        epoch_state.cmd_self = epoch_state.cmd = epoch_state.ack = false;
-
-        win_render(&state);
-      //end given
-      }
-      
-    }
-  }
-
-  net_fini(&sock);
-  win_fini();
-  return 0;
+	net_fini();
+	win_fini();
+	return 0;
 }
-/**/

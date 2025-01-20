@@ -18,23 +18,22 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include "includes.h"
+#include <stdint.h>
 
-
+#define OP_CMD 0
+#define OP_ACK 1
 
 typedef struct net_packet {
   /* TODO: Declare variables according to the protocol. */
-  uint8_t opcode; // 1 byte: 0 or 1
-  uint16_t epoch; // 2 bytes : epoch nb
-  uint8_t input; // 1 byte : 0 none, 1 up, 2 down
+  uint8_t cmd;
+  uint16_t epoch;
+  uint8_t input;
 } net_packet_t;
 
-void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
-              unsigned short port_other, socklen_t sao_size);
-void net_fini(int* sock);
-void net_send(int sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt,  unsigned char *buff, socklen_t sao_size);
+void net_init(unsigned short port_self, const char *hostname_other,
+              unsigned short port_other);
+void net_fini();
+void net_send(const net_packet_t *pkt);
 int net_poll(net_packet_t *pkt);
 
-void serialise(unsigned char *buff, const net_packet_t *pkt);
-void deserialise(net_packet_t *pkt, const unsigned char *buff);
 #endif

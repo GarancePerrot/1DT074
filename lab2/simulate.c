@@ -17,10 +17,10 @@
 
 #include "simulate.h"
 
-// #include <assert.h>
-// #include <math.h>
-// #include <stddef.h>
-// #include <stdlib.h>
+#include <assert.h>
+#include <math.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 static float normal(float x) { return x > 0 ? 1 : -1; }
 

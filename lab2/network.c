@@ -16,100 +16,131 @@
  */
 
 #include "network.h"
+#include "sys/socket.h"
 
+#include <arpa/inet.h>
+#include <assert.h>
+#include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-void net_init(int* sock, struct sockaddr_in* sock_addr_other, unsigned short port_self, const char *hostname_other,
-              unsigned short port_other, socklen_t sao_size) {
-  /* TODO:
-   * 1. Create a UDP socket.
-   * 2. Bind the socket to port_self.
-   * 3. Set sock_addr_other to the socket address at hostname_other and
-   * port_other. */
+static int sock;
+static struct sockaddr_in sock_addr_other;
 
-// 1. Create a UDP socket.
-  *sock = socket(AF_INET, SOCK_DGRAM, 0); //UDP socket
-  if (*sock < 0) {
-		perror("\nCannot create socket");
-	    return;
+void net_init(unsigned short port_self, const char *hostname_other,
+	      unsigned short port_other)
+{
+	/*
+	 * TODO:
+	 *
+	 * 1. Create a UDP socket.
+	 *
+	 * 2. Bind the socket to port_self.
+	 *
+	 * 3. Set sock_addr_other to the socket address at hostname_other and
+	 * port_other.
+	 *
+	 */
+	// #1
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0) {
+		perror("Socket creation failed");
+		exit(EXIT_FAILURE);
 	}
 
-// 2. (Prepare sock add structure and) bind the socket to port_self
-  struct sockaddr_in sock_addr;
-  memset(&sock_addr, '\0', sizeof(sock_addr));
-  sock_addr.sin_family = AF_INET; 
-  sock_addr.sin_addr.s_addr = INADDR_ANY; // bind to any available IP address
-  sock_addr.sin_port = htons(port_self);
+	// #2
+	struct sockaddr_in sock_addr_self;
+	memset(&sock_addr_self, 0, sizeof(sock_addr_self));
+	sock_addr_self.sin_family = AF_INET;
+	sock_addr_self.sin_addr.s_addr = htonl(INADDR_ANY);
+	sock_addr_self.sin_port = htons(port_self);
 
-  if (bind(*sock, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) < 0) {
-    perror("\nError: bind failed");
-    return;
-  }
+	if (bind(sock, (struct sockaddr *)&sock_addr_self,
+		 sizeof(sock_addr_self)) < 0) {
+		perror("Bind failed");
+		close(sock);
+		exit(EXIT_FAILURE);
+	}
 
-// 3. Set sock_addr_other to the socket address at hostname_other and port_other.
-  memset(sock_addr_other, '\0' , sao_size);
-  sock_addr_other->sin_family = AF_INET;
-  sock_addr_other->sin_port = htons(port_other);
-  sock_addr_other->sin_addr.s_addr = inet_addr(hostname_other); //inet_addr converts the char into a valid ip address
+	// #3
+	memset(&sock_addr_other, 0, sizeof(sock_addr_other));
+	sock_addr_other.sin_family = AF_INET;
+	sock_addr_other.sin_port = htons(port_other);
 
+	struct hostent *host = gethostbyname(hostname_other);
+	if (host == NULL) {
+		perror("Failed to resolve hostname");
+		close(sock);
+		exit(EXIT_FAILURE);
+	}
+	// memcpy(&sock_addr_other.sin_addr, host->h_addr_list, host->h_length);
 }
 
-void net_fini(int* sock) { /* TODO: Shutdown the socket. */
-  close(*sock); 
+void net_fini()
+{ /* TODO: Shutdown the socket. */
+	close(sock);
 }
 
-void serialise(unsigned char *buff, const net_packet_t *pkt) {
-  // converting the data within the packet into a sequence of bytes that can be transmitted
-
-  /* TODO:
-   * Serialise the packet according to the protocol.
-   * Note that it must use network endian.*/
-
-  // htons convert data from the host's native byte order to the network byte order before transmission
-
-  *(uint8_t*)buff = htons(pkt->opcode);  // casts buff to a pointer of the type of opcode and copies
-  buff += sizeof(uint8_t);  // increments pointer
-
-  *(uint16_t*)buff = htons(pkt->epoch);
-  buff += sizeof(uint16_t);
-
-  *(uint8_t*)buff = htons(pkt->input);
-  buff += sizeof(uint8_t);
-
+static void serialise(unsigned char *buff, const net_packet_t *pkt)
+{
+	/* TODO:
+	 *
+	 * Serialise the packet according to the protocol.
+	 *
+	 * Note that it must use network endian.
+	 */
+    buff[0] = pkt->cmd;
+    uint16_t epoch_net = htons(pkt->epoch);
+    memcpy(buff+1, &epoch_net, sizeof(epoch_net));
+    buff[3] = pkt->input;
 }
 
-void deserialise(net_packet_t *pkt, const unsigned char *buff) {
-  /* TODO: Deserialise the packet into the net_packet structure. */
-
-  //ntohs converts data from network byte order to the host's native byte order.
-
-  pkt->opcode = ntohs(*(uint8_t*)buff); 
-  buff += sizeof(uint8_t);
-
-  pkt->epoch = ntohs(*(uint16_t*)buff);
-  buff += sizeof(uint16_t);
-
-  pkt->input = ntohs(*(uint8_t*)buff);
-  buff += sizeof(uint8_t);
+static void deserialise(net_packet_t *pkt, const unsigned char *buff)
+{
+	/* TODO: Deserialise the packet into the net_packet structure. */
+    pkt->cmd = buff[0];
+    uint16_t epoch_net;
+    memcpy(&epoch_net, buff + 1, sizeof(epoch_net));
+    pkt->epoch = ntohs(epoch_net);
+    pkt->input = buff[3];  
 }
 
-int net_poll(net_packet_t *pkt) {
-  /* TODO: Poll a packet from the socket.
-   * Returns 0 if nothing to be read from the socket.
-   * Returns 1 otherwise.*/
-  int res = !(pkt->opcode); //if opcode is 1 (ack), there is nothing to be read so return 0, and conversely
-  return res;
+int net_poll(net_packet_t *pkt)
+{
+	/* TODO: Poll a packet from the socket.
+	 *
+	 * Returns 0 if nothing to be read from the socket.
+	 *
+	 * Returns 1 otherwise.
+	 */
+    struct pollfd pfd = {.fd=sock, .events=POLLIN};
+    int ret = poll(&pfd, 1, 0);
+    if (ret <= 0) {
+        return 0;
+    }
+    unsigned char buffer[1024];
+    socklen_t addr_len = sizeof(sock_addr_other);
+    ssize_t bytes_received = recvfrom(sock, buffer, sizeof(buffer), 0,
+                                      (struct sockaddr *)&sock_addr_other, &addr_len);
+    if (bytes_received > 0) {
+        deserialise(pkt, buffer);
+        return 1;
+    }
+	return 0;
 }
 
-void net_send(int sock, const struct sockaddr_in* sock_addr_other, const net_packet_t *pkt,  unsigned char *buff, socklen_t sao_size) {
-  /* TODO: Serialise and send the packet to the other's socket. */
- 
-  serialise(buff,pkt);
+void net_send(const net_packet_t *pkt)
+{
+	/* TODO: Serialise and send the packet to the other's socket. */
+    unsigned char buffer[1024];
+    serialise(buffer, pkt);
 
-  int len = sendto(sock,(const char*)buff, sizeof(buff), 0,
-      (const struct sockaddr *)sock_addr_other, sao_size); 
-  if (len < 0) {
-      perror("\nCannot send packet");
-      return;
-  } 
+    sendto(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&sock_addr_other,
+           sizeof(sock_addr_other));
 }
-/**/
