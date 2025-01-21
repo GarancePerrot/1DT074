@@ -79,7 +79,7 @@ void net_init(unsigned short port_self, const char *hostname_other,
 		close(sock);
 		exit(EXIT_FAILURE);
 	}
-	memcpy(&sock_addr_other.sin_addr, host->h_addr_list, host->h_length);
+	memcpy(&sock_addr_other.sin_addr, host->h_addr_list[0], host->h_length);
 }
 
 void net_fini()
