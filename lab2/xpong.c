@@ -79,13 +79,15 @@ int main(int argc, char *argv[argc + 1])
 			 */
 			net_packet_t pkt;
 			while (net_poll(&pkt)) {
-				if (pkt.cmd == OP_ACK)
+				if (pkt.cmd == OP_ACK && pkt.epoch==epoch)
 					epoch_state.ack = true;
-				else if (pkt.cmd == OP_CMD && pkt.epoch==epoch) {
-					epoch_state.cmd = true;
-					cmds[1 - player] = pkt.input;
+				else if (pkt.cmd == OP_CMD && pkt.epoch<=epoch) {
+					if (pkt.epoch==epoch){
+						epoch_state.cmd = true;
+						cmds[1 - player] = pkt.input;
+					}
 					net_packet_t ack_pkt = {.cmd = OP_ACK,
-								.epoch = epoch,
+								.epoch = pkt.epoch,
 								.input = 0};
 					net_send(&ack_pkt);
                 }
